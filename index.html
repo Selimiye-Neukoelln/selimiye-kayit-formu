@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neukölln Selimiye | Kayıt ve Anket</title>
+<style>
+:root{font-family:system-ui,-apple-system,Arial,sans-serif;color:#17212e;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}header{background:#123b56;color:white;padding:24px 18px;text-align:center}header h1{margin:0;font-size:1.65rem}header p{margin:8px 0 0;color:#d6e5ed}main{max-width:780px;margin:28px auto;padding:0 16px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}.card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 20px #16334b12}.card h2{margin-top:0;font-size:1.25rem}.card p{line-height:1.55;color:#4c5a68}button{background:#126b83;border:0;border-radius:10px;color:white;padding:12px 16px;font-size:1rem;cursor:pointer;width:100%}button:hover{background:#0d5367}.panel{margin-top:20px;background:white;padding:22px;border-radius:16px;box-shadow:0 4px 20px #16334b12}label{display:block;margin:14px 0 6px;font-weight:600}input,textarea{width:100%;padding:12px;border:1px solid #b7c6d0;border-radius:8px;font:inherit}textarea{min-height:90px}small,.note{color:#566574;line-height:1.5}.hidden{display:none}.notice{padding:12px;border-radius:8px;background:#eef5fa;margin-top:12px}footer{text-align:center;color:#657482;padding:30px 12px}
+</style>
+</head>
+<body>
+<header><h1>Neukölln Selimiye</h1><p>Kayıt ve Anket Sistemi</p></header>
+<main>
+<div class="grid">
+<section class="card"><h2>Kayıt Formu</h2><p>Başvuru ve iletişim bilgilerinizi kayıt formu üzerinden iletin.</p><button type="button" onclick="show('registration')">Kayıt Formunu Aç</button></section>
+<section class="card"><h2>Anketler</h2><p>Yayınlanan anketlere katılın ve görüşlerinizi paylaşın.</p><button type="button" onclick="show('survey')">Anketleri Gör</button></section>
+<section class="card"><h2>Yönetici Paneli</h2><p>Yetkili kullanıcılar için kayıt, anket ve rapor yönetimi.</p><button type="button" onclick="show('admin')">Yönetici Girişi</button></section>
+</div>
+<section class="panel hidden" id="registration"><h2>Kayıt Formu</h2><p class="note">Bu sayfa henüz deneme sürümüdür. Lütfen gerçek kişisel bilgi girmeyin.</p><form onsubmit="demo(event)"><label for="name">Ad soyad</label><input id="name" autocomplete="name" required><label for="email">E-posta (isteğe bağlı)</label><input id="email" type="email" autocomplete="email"><label for="message">Açıklama (isteğe bağlı)</label><textarea id="message"></textarea><button type="submit">Deneme Gönderimi</button></form><div class="notice hidden" id="feedback" role="status">Bu bir arayüz denemesidir. Bilgiler kaydedilmedi veya gönderilmedi.</div></section>
+<section class="panel hidden" id="survey"><h2>Anketler</h2><p>Henüz yayınlanmış anket bulunmuyor. Yönetici paneli ve veri tabanı bağlandıktan sonra anketler burada listelenecek.</p></section>
+<section class="panel hidden" id="admin"><h2>Yönetici Paneli</h2><p>Güvenli yönetici girişi sonraki aşamada Supabase Authentication ile eklenecek. Bu önizlemede yönetici girişi etkin değildir.</p></section>
+</main><footer>Neukölln Selimiye · Önizleme sürümü</footer>
+<script>
+function show(id){for(const el of document.querySelectorAll('.panel'))el.classList.toggle('hidden',el.id!==id);document.getElementById(id).scrollIntoView({behavior:'smooth',block:'start'});}
+function demo(e){e.preventDefault();document.getElementById('feedback').classList.remove('hidden');}
+</script>
+</body>
+</html>
