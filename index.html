@@ -61,20 +61,20 @@ $('logoutButton').addEventListener('click',()=>{clearSession();notice('adminFeed
 loadOptions();
 
 async function loadSurveys() {
-  const surveyList = document.getElementById('surveyList');
-  if (!surveyList) return;
+  const list = document.getElementById('surveyList');
+  if (!list) return;
 
-  surveyList.textContent = 'Anketler yükleniyor...';
+  list.textContent = 'Anketler yükleniyor...';
 
   try {
     const surveys = await api(
       'surveys?select=id,title,description&active=eq.true&order=created_at.desc'
     );
 
-    surveyList.replaceChildren();
+    list.replaceChildren();
 
-    if (surveys.length === 0) {
-      surveyList.textContent = 'Şu anda aktif anket bulunmuyor.';
+    if (!surveys.length) {
+      list.textContent = 'Şu anda aktif anket bulunmuyor.';
       return;
     }
 
@@ -85,17 +85,84 @@ async function loadSurveys() {
 
       title.textContent = survey.title;
       description.textContent = survey.description || '';
-
       section.append(title, description);
-      surveyList.appendChild(section);
+      list.append(section);
+
+      try {
+        const questions = await api(
+          'survey_questions?select=id,question_text,question_type,options' +
+          '&survey_id=eq.' + encodeURIComponent(survey.id) +
+          '&order=id.asc'
+        );
+
+        if (!questions.length) {
+          const message = document.createElement('p');
+          message.textContent = 'Bu ankete henüz soru eklenmemiş.';
+          section.append(message);
+          continue;
+        }
+
+        for (const question of questions) {
+          const group = document.createElement('fieldset');
+          group.style.cssText =
+            'margin:20px 0;padding:16px;border:1px solid #dbe4ea;border-radius:10px';
+
+          const legend = document.createElement('legend');
+          legend.textContent = question.question_text;
+          group.append(legend);
+
+          if (question.question_type === 'single_choice') {
+            const options = Array.isArray(question.options)
+              ? question.options : [];
+
+            for (const option of options) {
+              const label = document.createElement('label');
+              label.style.cssText =
+                'display:flex;align-items:center;gap:10px;font-weight:400';
+
+              const input = document.createElement('input');
+              input.type = 'radio';
+              input.name = 'question_' + question.id;
+              input.value = String(option);
+              input.style.cssText = 'width:auto;margin:0';
+
+              const text = document.createElement('span');
+              text.textContent = String(option);
+              label.append(input, text);
+              group.append(label);
+            }
+          } else if (question.question_type === 'text') {
+            const input = document.createElement('textarea');
+            input.name = 'question_' + question.id;
+            input.maxLength = 2000;
+            input.setAttribute('aria-label', question.question_text);
+            group.append(input);
+          } else {
+            const message = document.createElement('p');
+            message.textContent =
+              'Bu soru türü için cevap alanı henüz hazırlanmadı.';
+            group.append(message);
+          }
+
+          section.append(group);
+        }
+
+        const note = document.createElement('p');
+        note.textContent =
+          'Önizleme: Cevap gönderme henüz etkin değil.';
+        section.append(note);
+      } catch (error) {
+        const message = document.createElement('p');
+        message.textContent = 'Sorular yüklenemedi: ' + error.message;
+        section.append(message);
+      }
     }
   } catch (error) {
-    surveyList.textContent = 'Anketler yüklenemedi.';
+    list.textContent = 'Anketler yüklenemedi: ' + error.message;
   }
 }
 
 loadSurveys();
-
 </script>
 </body>
 </html>
