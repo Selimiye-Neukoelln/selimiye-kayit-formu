@@ -27,7 +27,10 @@
 <p class="note">* Zorunlu alanlar. Gönderdiğiniz bilgiler kayıt başvurunuzu işlemek için saklanır.</p>
 <button id="submitButton" type="submit" disabled>Kaydı Gönder</button>
 </form><div class="notice hidden" id="feedback" role="status" aria-live="polite"></div></section>
-<section class="panel hidden" id="survey"><h2>Anketler</h2><p>Anketler yükleniyor...</p></section>
+<section class="panel hidden" id="survey">
+  <h2>Anketler</h2>
+  <div id="surveyList">Anketler yükleniyor...</div>
+</section>
 <section class="panel hidden" id="admin"><h2>Yönetici Paneli</h2>
 <div id="loginArea"><p class="note">Yalnızca yetkili yönetici hesapları giriş yapabilir.</p><form id="loginForm"><label for="adminEmail">E-posta</label><input id="adminEmail" type="email" autocomplete="username" required><label for="adminPassword">Şifre</label><input id="adminPassword" type="password" autocomplete="current-password" required><p></p><button id="loginButton" type="submit">Giriş Yap</button></form></div>
 <div id="adminArea" class="hidden"><div class="toolbar"><span id="adminIdentity" class="muted"></span><div class="toolbar"><button type="button" id="refreshButton">Kayıtları Yenile</button><button type="button" id="logoutButton">Çıkış Yap</button></div></div><p class="note" id="recordCount"></p><div class="table-wrap"><table><thead><tr><th>Tarih</th><th>Program</th><th>Şube</th><th>Ad</th><th>Soyad</th><th>Telefon</th><th>Açıklama</th></tr></thead><tbody id="recordsBody"></tbody></table></div></div>
