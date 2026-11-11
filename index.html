@@ -147,10 +147,83 @@ async function loadSurveys() {
           section.append(group);
         }
 
-        const note = document.createElement('p');
-        note.textContent =
-          'Önizleme: Cevap gönderme henüz etkin değil.';
-        section.append(note);
+        const sendButton = document.createElement('button');
+sendButton.type = 'button';
+sendButton.textContent = 'Cevapları Gönder';
+
+const status = document.createElement('p');
+status.setAttribute('role', 'status');
+status.setAttribute('aria-live', 'polite');
+
+section.append(sendButton, status);
+
+sendButton.addEventListener('click', async () => {
+  const answers = [];
+
+  for (const question of questions) {
+    const name = 'question_' + question.id;
+    const inputs = Array.from(
+      section.querySelectorAll('input, textarea')
+    ).filter(input => input.name === name);
+
+    const selected = question.question_type === 'single_choice'
+      ? inputs.find(input => input.checked)
+      : inputs[0];
+
+    const value = selected ? selected.value : '';
+
+    if (!value.trim()) {
+      status.textContent = 'Lütfen bütün soruları cevaplayın.';
+      if (inputs[0]) inputs[0].focus();
+      return;
+    }
+
+    answers.push({
+      question_id: question.id,
+      answer_text: value
+    });
+  }
+
+  sendButton.disabled = true;
+  sendButton.textContent = 'Gönderiliyor…';
+  status.textContent = '';
+
+  try {
+    const response = await fetch(
+      SUPABASE_URL + '/rest/v1/rpc/submit_selimiye_survey',
+      {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_PUBLISHABLE_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          p_survey_id: survey.id,
+          p_answers: answers
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(
+        error.message || 'Gönderilemedi (HTTP ' + response.status + ').'
+      );
+    }
+
+    status.textContent =
+      'Cevaplarınız kaydedildi. Katılımınız için teşekkür ederiz.';
+    sendButton.textContent = 'Gönderildi';
+
+    section.querySelectorAll('input, textarea').forEach(input => {
+      input.disabled = true;
+    });
+  } catch (error) {
+    status.textContent = 'Gönderim doğrulanamadı: ' + error.message;
+    sendButton.disabled = false;
+    sendButton.textContent = 'Tekrar Dene';
+  }
+});
       } catch (error) {
         const message = document.createElement('p');
         message.textContent = 'Sorular yüklenemedi: ' + error.message;
