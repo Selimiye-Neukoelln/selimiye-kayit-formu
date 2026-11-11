@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neukölln Selimiye | Kayıt ve Anket</title>
+<style>
+:root{font-family:system-ui,-apple-system,Arial,sans-serif;color:#17212e;background:#f4f7fb}*{box-sizing:border-box}body{margin:0}header{background:#123b56;color:white;padding:24px 18px;text-align:center}header h1{margin:0;font-size:1.65rem}header p{margin:8px 0 0;color:#d6e5ed}main{max-width:780px;margin:28px auto;padding:0 16px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}.card{background:white;border-radius:16px;padding:24px;box-shadow:0 4px 20px #16334b12}.card h2{margin-top:0;font-size:1.25rem}.card p{line-height:1.55;color:#4c5a68}button{background:#126b83;border:0;border-radius:10px;color:white;padding:12px 16px;font-size:1rem;cursor:pointer;width:100%}button:hover{background:#0d5367}button:disabled{opacity:.55;cursor:not-allowed}.panel{margin-top:20px;background:white;padding:22px;border-radius:16px;box-shadow:0 4px 20px #16334b12}label{display:block;margin:14px 0 6px;font-weight:600}input,textarea,select{width:100%;padding:12px;border:1px solid #b7c6d0;border-radius:8px;font:inherit;background:white}textarea{min-height:90px}small,.note{color:#566574;line-height:1.5}.hidden{display:none}.notice{padding:12px;border-radius:8px;background:#eef5fa;margin-top:12px}.notice.error{background:#fff0ed;color:#8c2424}.notice.success{background:#e8f6ed;color:#165a30}footer{text-align:center;color:#657482;padding:30px 12px}.admin-actions{display:flex;gap:10px;margin:14px 0}.admin-actions button{width:auto}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{text-align:left;padding:9px;border-bottom:1px solid #dce5ed;white-space:nowrap}
+</style>
+</head>
+<body>
+<header><h1>Neukölln Selimiye</h1><p>Kayıt ve Anket Sistemi</p></header>
+<main>
+<div class="grid">
+<section class="card"><h2>Kayıt Formu</h2><p>Başvuru ve iletişim bilgilerinizi kayıt formu üzerinden iletin.</p><button type="button" onclick="show('registration')">Kayıt Formunu Aç</button></section>
+<section class="card"><h2>Anketler</h2><p>Yayınlanan anketlere katılın ve görüşlerinizi paylaşın.</p><button type="button" onclick="show('survey')">Anketleri Gör</button></section>
+<section class="card"><h2>Yönetici Paneli</h2><p>Yetkili kullanıcılar için kayıt, anket ve rapor yönetimi.</p><button type="button" onclick="show('admin')">Yönetici Girişi</button></section>
+</div>
+<section class="panel hidden" id="registration"><h2>Kayıt Formu</h2><p class="note" id="intro">Program ve şubenizi seçerek başvurunuzu gönderebilirsiniz.</p>
+<form id="registrationForm">
+<label for="program">Program *</label><select id="program" required disabled><option value="">Programlar yükleniyor…</option></select>
+<label for="branch">Şube *</label><select id="branch" required disabled><option value="">Şubeler yükleniyor…</option></select>
+<label for="firstName">Ad *</label><input id="firstName" autocomplete="given-name" maxlength="100" required>
+<label for="lastName">Soyad *</label><input id="lastName" autocomplete="family-name" maxlength="100" required>
+<label for="phone">Telefon numarası *</label><input id="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="40" required placeholder="Örn. +49 170 1234567">
+<label for="note">Açıklama (isteğe bağlı)</label><textarea id="note" maxlength="1000"></textarea>
+<p class="note">* Zorunlu alanlar. Gönderdiğiniz bilgiler kayıt başvurunuzu işlemek için saklanır.</p>
+<button id="submitButton" type="submit" disabled>Kaydı Gönder</button>
+</form><div class="notice hidden" id="feedback" role="status" aria-live="polite"></div></section>
+<section class="panel hidden" id="survey"><h2>Anketler</h2><p>Anketler henüz etkinleştirilmedi.</p></section>
+<section class="panel hidden" id="admin"><h2>Yönetici Paneli</h2>
+<form id="adminLoginForm"><label for="adminEmail">E-posta</label><input id="adminEmail" type="email" autocomplete="username" required><label for="adminPassword">Şifre</label><input id="adminPassword" type="password" autocomplete="current-password" required><button id="loginButton" type="submit">Giriş Yap</button></form>
+<div id="adminDashboard" class="hidden"><p>Yönetici girişi başarılı.</p><div class="admin-actions"><button id="refreshRegistrations" type="button">Kayıtları Yenile</button><button id="logoutButton" type="button">Çıkış Yap</button></div><div class="table-wrap"><table><thead><tr><th>Tarih</th><th>Ad</th><th>Soyad</th><th>Telefon</th><th>Açıklama</th></tr></thead><tbody id="registrationRows"></tbody></table></div></div>
+<div class="notice hidden" id="adminFeedback" role="status" aria-live="polite"></div>
+</section>
+</main><footer>Neukölln Selimiye · Kayıt Sistemi</footer>
+<script>
+'use strict';
+const SUPABASE_URL = 'https://migapcjtoywubjwilghk.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_NdgTORdQ39ia9xDLe_p7cg_HtmUQX10';
+function show(id){for(const el of document.querySelectorAll('.panel'))el.classList.toggle('hidden',el.id!==id);document.getElementById(id).scrollIntoView({behavior:'smooth',block:'start'});}
+const form=document.getElementById('registrationForm');
+const program=document.getElementById('program');
+const branch=document.getElementById('branch');
+const submitButton=document.getElementById('submitButton');
+const feedback=document.getElementById('feedback');
+function message(text,kind='error'){feedback.textContent=text;feedback.className='notice '+kind;}
+async function api(path,options={}){
+ const response=await fetch(SUPABASE_URL+'/rest/v1/'+path,{...options,headers:{'apikey':SUPABASE_PUBLISHABLE_KEY,'Content-Type':'application/json',...(options.headers||{})}});
+ if(!response.ok)throw new Error('HTTP '+response.status);
+ return response.json();
+}
+function fill(select,items,placeholder){select.replaceChildren(new Option(placeholder,''));for(const item of items)select.add(new Option(item.title||item.name,item.id));select.disabled=items.length===0;}
+async function loadOptions(){
+ try{
+  const [programs,branches]=await Promise.all([
+   api('programs?select=id,title,branch_id,active,deadline&active=eq.true&order=title.asc'),
+   api('branches?select=id,name,active&active=eq.true&order=name.asc')
+  ]);
+  const now=Date.now();
+  const activePrograms=programs.filter(p=>!p.deadline||Date.parse(p.deadline)>=now);
+  fill(program,activePrograms,'Program seçiniz');
+  fill(branch,branches,'Şube seçiniz');
+  program.addEventListener('change',()=>{
+   const selected=activePrograms.find(p=>p.id===program.value);
+   const allowed=selected&&selected.branch_id?branches.filter(b=>b.id===selected.branch_id):branches;
+   fill(branch,allowed,'Şube seçiniz');
+  });
+  submitButton.disabled=!activePrograms.length||!branches.length;
+  if(!activePrograms.length||!branches.length)message('Şu anda başvuruya açık program veya şube bulunmuyor.');
+ }catch(err){message('Program ve şube listesi yüklenemedi. Lütfen daha sonra tekrar deneyin.');}
+}
+form.addEventListener('submit',async event=>{
+ event.preventDefault();
+ const first=document.getElementById('firstName').value.trim();
+ const last=document.getElementById('lastName').value.trim();
+ const phone=document.getElementById('phone').value.trim();
+ const note=document.getElementById('note').value.trim();
+ if(!first||!last||!phone||!program.value||!branch.value){message('Lütfen bütün zorunlu alanları doldurun.');return;}
+ if(phone.length>40||note.length>1000){message('Telefon veya açıklama çok uzun.');return;}
+ submitButton.disabled=true;submitButton.textContent='Gönderiliyor…';feedback.classList.add('hidden');
+ try{
+  const response=await fetch(SUPABASE_URL+'/rest/v1/rpc/submit_selimiye_registration',{
+   method:'POST',headers:{'apikey':SUPABASE_PUBLISHABLE_KEY,'Content-Type':'application/json'},
+   body:JSON.stringify({p_program_id:program.value,p_branch_id:branch.value,p_first_name:first,p_last_name:last,p_phone:phone,p_note:note||null})
+  });
+  if(!response.ok){let data={};try{data=await response.json();}catch{}throw new Error(data.message||'Kayıt gönderilemedi.');}
+  form.reset();message('Başvurunuz başarıyla kaydedildi.','success');
+ }catch(err){message('Kayıt tamamlanamadı: '+err.message);}
+ finally{submitButton.disabled=false;submitButton.textContent='Kaydı Gönder';}
+});
+// Yönetici oturumu sadece bellekte tutulur; sayfa yenilenince yeniden giriş gerekir.
+let adminToken=null;
+const adminFeedback=document.getElementById('adminFeedback');
+function adminMessage(text,kind='error'){adminFeedback.textContent=text;adminFeedback.className='notice '+kind;}
+function clearAdmin(){adminToken=null;document.getElementById('adminDashboard').classList.add('hidden');document.getElementById('adminLoginForm').classList.remove('hidden');document.getElementById('registrationRows').replaceChildren();document.getElementById('adminPassword').value='';}
+async function authFetch(path,token){
+ const response=await fetch(SUPABASE_URL+'/rest/v1/'+path,{headers:{'apikey':SUPABASE_PUBLISHABLE_KEY,'Authorization':'Bearer '+token}});
+ if(!response.ok)throw new Error('HTTP '+response.status);
+ return response.json();
+}
+async function loadRegistrations(){
+ if(!adminToken)return;
+ const rows=document.getElementById('registrationRows');rows.replaceChildren();
+ try{
+  const data=await authFetch('registrations?select=created_at,first_name,last_name,phone,note&order=created_at.desc&limit=100',adminToken);
+  for(const item of data){
+   const tr=document.createElement('tr');
+   const values=[item.created_at?new Date(item.created_at).toLocaleString('tr-TR'):'',item.first_name,item.last_name,item.phone,item.note];
+   for(const value of values){const td=document.createElement('td');td.textContent=value??'';tr.append(td);}
+   rows.append(tr);
+  }
+  adminMessage(data.length?`${data.length} kayıt listelendi (en fazla 100).`:'Henüz görüntülenecek kayıt bulunmuyor.','success');
+ }catch(err){adminMessage('Kayıtlar okunamadı. Supabase RLS izinlerini kontrol edin. ('+err.message+')');}
+}
+document.getElementById('adminLoginForm').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const btn=document.getElementById('loginButton');btn.disabled=true;adminFeedback.classList.add('hidden');
+ try{
+  const response=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password',{method:'POST',headers:{'apikey':SUPABASE_PUBLISHABLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({email:document.getElementById('adminEmail').value.trim(),password:document.getElementById('adminPassword').value})});
+  const result=await response.json();
+  if(!response.ok||!result.access_token||!result.user?.id)throw new Error('E-posta veya şifre doğrulanamadı.');
+  const check=await authFetch('admin_users?select=user_id&user_id=eq.'+encodeURIComponent(result.user.id)+'&limit=1',result.access_token);
+  if(!Array.isArray(check)||check.length!==1)throw new Error('Bu hesap yönetici olarak yetkilendirilmemiş veya admin_users erişimi kapalı.');
+  adminToken=result.access_token;
+  document.getElementById('adminPassword').value='';
+  document.getElementById('adminLoginForm').classList.add('hidden');document.getElementById('adminDashboard').classList.remove('hidden');
+  await loadRegistrations();
+ }catch(err){clearAdmin();adminMessage(err.message);}
+ finally{btn.disabled=false;}
+});
+document.getElementById('refreshRegistrations').addEventListener('click',loadRegistrations);
+document.getElementById('logoutButton').addEventListener('click',()=>{clearAdmin();adminMessage('Çıkış yapıldı.','success');});
+loadOptions();
+</script>
+</body>
+</html>
